@@ -1,88 +1,56 @@
-# possibility.py
+
+# reads data, declusters, builds exceedances, prints the two values.
+
 import numpy as np
-from scipy.optimize import minimize
-import scipy.stats as st
+import pandas as pd
+from potanalysis import clust  # you already have this
+from predict import outer_and_necessity, outer_and_necessity_per_year
 
-# ---------- Poisson rate (λ0) from N events in T years ----------
-def lambda_possibility_from_counts(N, T, lam_grid=None):
-    lam_hat = N / T
-    if lam_grid is None:
-        lo = max(1e-8, 0.1*lam_hat) if lam_hat>0 else 1e-6
-        hi = 5*lam_hat + 1e-6 if lam_hat>0 else 5.0
-        lam_grid = np.linspace(lo, hi, 2000)
-    # log-likelihood up to additive constant
-    ell = N*np.log(np.maximum(lam_grid*T, 1e-300)) - lam_grid*T
-    ell -= np.max(ell)
-    pi = np.exp(ell)
-    return lam_hat, lam_grid, pi
+# ------------------------------
+# User/config inputs
+# ------------------------------
+DATA_CSV  = "ardieres.csv"
+u         = 12.0          # POT threshold (same units as 'obs')
+time_cond = 7/365.0       # declustering gap in years (≈ one week)
+xi_grid   = np.linspace(-0.30, 0.60, 121)   # GPD ξ grid
+sig_grid  = np.linspace(  5.00, 40.00, 141) # GPD σ grid
+B         = ("tail", 25.0)                  # event set: exceed y = 25.0
+tnorm     = "product"                       # or "min"
 
-def alpha_interval_1d(grid, pi, alpha):
-    m = (pi >= alpha)
-    if not np.any(m): return None
-    return float(grid[m].min()), float(grid[m].max())
+# ------------------------------
+# Load and decluster
+# ------------------------------
+df = pd.read_csv(DATA_CSV).dropna()
+df_cl, _ = clust(df, u=u, time_cond=time_cond, clust_max=True)
 
-# ---------- GPD(ξ, σ) possibility from exceedances ----------
-def gpd_loglik(x_excess, xi, sigma):
-    if sigma <= 0: return -np.inf
-    if np.any(1 + xi * x_excess / sigma <= 0): return -np.inf
-    return np.sum(st.genpareto.logpdf(x_excess, c=xi, loc=0, scale=sigma))
+# Exceedances
+z = (df_cl['obs'][df_cl['obs'] > u] - u).values
+if z.size == 0:
+    raise RuntimeError("No exceedances above u; choose a lower u or check data.")
 
-def gpd_possibility_grid(x_excess, xi_grid, sig_grid):
-    XI, SIG = np.meshgrid(xi_grid, sig_grid, indexing='ij')
-    L = np.full_like(XI, -np.inf, dtype=float)
-    for i in range(XI.shape[0]):
-        for j in range(XI.shape[1]):
-            L[i, j] = gpd_loglik(x_excess, XI[i, j], SIG[i, j])
-    L -= np.max(L)
-    PI = np.exp(L)  # normalize to sup = 1
-    return XI, SIG, PI
+# ------------------------------
+# Magnitude-only two numbers
+# ------------------------------
+Pbar, Punder = outer_and_necessity(z, u, xi_grid, sig_grid, B, tnorm=tnorm)
+print(f"Upper probability  P̄(X ∈ B | D) = {Pbar:.6f}")
+print(f"Necessity (lower)  P_(X ∈ B | D) = {Punder:.6f}")
 
-def gpd_quantile_alpha_band(Tr, u, alpha, xi_grid, sig_grid, PI, lam_interval):
-    """
-    Return α-cut band for discharge Q_Tr (per-year return period Tr) using:
-    Q_Tr = u + GPD.ppf(1 - 1/(λ0*Tr), ξ, σ)
-    """
-    # λ0 α-cut interval (min/max); if None, treat as single value
-    lam_lo, lam_hi = lam_interval if lam_interval is not None else (None, None)
-
-    # candidate p's over α-cut of λ0
-    if lam_lo is None:
-        lam_candidates = []
+# ------------------------------
+# Optional: one-year exceedance (include event rate)
+# ------------------------------
+# Event count N and exposure T_years
+N = int((df_cl['obs'] > u).sum())
+if 'time' in df.columns and np.issubdtype(df['time'].dtype, np.number):
+    T_years = float(df['time'].iloc[-1] - df['time'].iloc[0])
+else:
+    if 'date' in df.columns:
+        t = pd.to_datetime(df['date'])
+        T_years = (t.max() - t.min()).days / 365.25
     else:
-        lam_candidates = [lam_lo, lam_hi]
+        T_years = len(df) / 365.25
 
-    # collect all q from (ξ,σ) with π≥α and λ0 in α-cut
-    mask = (PI >= alpha)
-    xi_vals = xi_grid[mask]
-    sig_vals = sig_grid[mask]
-    qs = []
-
-    # if λ0 uncertain, consider both ends (worst/best cases)
-    lam_ends = lam_candidates if lam_candidates else [None]
-    for lam in lam_ends:
-        if lam is None:
-            # fallback: treat Tr as if p=1/Tr (only if you prefer to ignore λ0 here)
-            p_ex = 1.0/Tr
-        else:
-            p_ex = 1.0/(lam*Tr)
-        p_ex = np.clip(p_ex, 1e-12, 1-1e-12)
-        q_ex = st.genpareto.ppf(1 - p_ex, c=xi_vals, loc=0, scale=sig_vals)
-        qs.append(u + q_ex)
-
-    q_all = np.concatenate(qs) if len(qs)>1 else qs[0]
-    return float(np.min(q_all)), float(np.max(q_all))
-
-# ---------- GLUE → possibility over β=(r_ch, r_fp) ----------
-def glue_scores_to_possibility(F_scores):
-    # scale to [0,1] and renormalize to sup=1
-    F = np.asarray(F_scores, dtype=float)
-    if np.allclose(F.max(), F.min()):
-        pi = np.ones_like(F)
-    else:
-        pi = (F - F.min())/(F.max() - F.min())
-    if pi.max() > 0:
-        pi /= pi.max()
-    return pi
-
-def alpha_subset_indices(pi, alpha):
-    return np.where(pi >= alpha)[0]
+Pbar_y, Punder_y = outer_and_necessity_per_year(
+    z, u, xi_grid, sig_grid, N, T_years, B, tnorm=tnorm
+)
+print(f"[Per-year] Upper      = {Pbar_y:.6f}")
+print(f"[Per-year] Lower      = {Punder_y:.6f}")
