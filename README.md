@@ -17,15 +17,16 @@ your-project/
 
 ## Data format
 
-CSV with:
+ardieres.csv with:
 - `obs`: discharge
 - `date` (or `time`): datetime or decimal year
 
 Example:
 ```csv
-date,obs
-1990-01-01,42.7
-1990-01-02,44.1
+timestamp,obs
+2002.78367579909,0.124
+2002.78630136986,0.104
+2002.78816400304,0.114
 ```
 
 ---
@@ -36,18 +37,17 @@ date,obs
 2. Run:
 
 ```bash
-python run_poss_value.py
+python possibility.py
 ```
 
 Output:
 ```
-Upper probability  P̄(X ∈ B | D) = 0.31
-Necessity (lower)  P_(X ∈ B | D) = 0.15
-```
+Upper probability  P̄(X ∈ B | D) 
+Necessity (lower)  P_(X ∈ B | D) 
 
 ---
 
-## Theory summary
+## Theory
 
 ### 1. GPD exceedances
 
@@ -63,11 +63,11 @@ Necessity (lower)  P_(X ∈ B | D) = 0.15
 - $(\overline{P}(B|D) = \sup_\theta T(\pi(\theta), P_\theta(B)))$
 - $(\underline{P}(B|D) = 1 - \sup_\theta T(\pi(\theta), 1 - P_\theta(B)))$
 
-Optional per-year form includes $(\lambda_0)$ via Poisson rate.
+- We also calculate a per-year rate $(\lambda_0)$ via Poisson.
 
 ---
 
-## Extend
+## Potential Extensions
 
 - Use Lisflood/GLUE for depth maps
 - Use α-cuts on $(\pi(\theta|D))$ to produce hazard bands
