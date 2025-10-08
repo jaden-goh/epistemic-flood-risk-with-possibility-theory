@@ -1,5 +1,5 @@
 
-# Possibilistic POT Hazard — README
+# Analysing Flood Risks with Possibility Theory — README
 
 ## File structure
 
