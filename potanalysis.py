@@ -107,7 +107,7 @@ def clust(df: pd.DataFrame,
     return df_clusters, None
 
 # ---------------------------
-# GPD helpers (optional)
+# GPD helpers 
 # ---------------------------
 
 def fit_gpd_mle(z: np.ndarray) -> Tuple[float, float]:
@@ -184,7 +184,7 @@ def threshold_choice(z: Sequence[float],
     return thresholds, np.asarray(sigma_star), np.asarray(xi_list)
 
 # ---------------------------
-# Convenience: build exceedances from raw series
+# build exceedances from raw series
 # ---------------------------
 
 def make_exceedances(df: pd.DataFrame, u: float, time_cond: float) -> Tuple[pd.DataFrame, np.ndarray]:
@@ -196,21 +196,7 @@ def make_exceedances(df: pd.DataFrame, u: float, time_cond: float) -> Tuple[pd.D
     return df_cl, z
 
 # ---------------------------
-# (Optional) quick sanity diagnostics without external libs
-# ---------------------------
-
-def qq_pp_diagnostics(z: np.ndarray, xi: float, sig: float):
-    """
-    Return theoretical vs empirical CDF pairs for quick qq/pp plotting (user can plot outside).
-    """
-    z = np.asarray(z, dtype=float)
-    th_cdf = st.genpareto.cdf(z, c=xi, loc=0.0, scale=sig)
-    th_cdf_sorted = np.sort(th_cdf)
-    _, emp_cdf = ecdf(z)
-    return th_cdf_sorted, emp_cdf
-
-# ---------------------------
-# Minimal demo (guarded)
+# Minimal demo
 # ---------------------------
 
 if __name__ == "__main__":

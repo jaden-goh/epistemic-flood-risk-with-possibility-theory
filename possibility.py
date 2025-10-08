@@ -29,14 +29,14 @@ if z.size == 0:
     raise RuntimeError("No exceedances above u; choose a lower u or check data.")
 
 # ------------------------------
-# Magnitude-only two numbers
+# Magnitude
 # ------------------------------
 Pbar, Punder = outer_and_necessity(z, u, xi_grid, sig_grid, B, tnorm=tnorm)
 print(f"Upper probability  P̄(X ∈ B | D) = {Pbar:.6f}")
 print(f"Necessity (lower)  P_(X ∈ B | D) = {Punder:.6f}")
 
 # ------------------------------
-# Optional: one-year exceedance (include event rate)
+# one-year exceedance (event rate)
 # ------------------------------
 # Event count N and exposure T_years
 N = int((df_cl['obs'] > u).sum())
