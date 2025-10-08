@@ -1,9 +1,6 @@
-
-# reads data, declusters, builds exceedances, prints the two values.
-
 import numpy as np
 import pandas as pd
-from potanalysis import clust  # you already have this
+from potanalysis import clust 
 from predict import outer_and_necessity, outer_and_necessity_per_year
 
 # ------------------------------
@@ -52,5 +49,5 @@ else:
 Pbar_y, Punder_y = outer_and_necessity_per_year(
     z, u, xi_grid, sig_grid, N, T_years, B, tnorm=tnorm
 )
-print(f"[Per-year] Upper      = {Pbar_y:.6f}")
-print(f"[Per-year] Lower      = {Punder_y:.6f}")
+print(f"[Per-year] Upper = {Pbar_y:.6f}")
+print(f"[Per-year] Lower = {Punder_y:.6f}")

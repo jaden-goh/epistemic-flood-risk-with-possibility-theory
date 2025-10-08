@@ -116,7 +116,7 @@ def outer_and_necessity(z_excess, u, xi_grid, sig_grid, B, tnorm="product"):
 
 
 # ------------------------------
-# 4) Optional: include event rate λ0 for one-year exceedance
+# 4) include event rate λ0 for one-year exceedance
 # ------------------------------
 def lambda_possibility_from_counts(N, T_years, lam_grid=None):
     """

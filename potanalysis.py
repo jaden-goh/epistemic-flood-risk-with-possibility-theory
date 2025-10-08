@@ -31,7 +31,7 @@ def record_length_years(df: pd.DataFrame) -> float:
     return len(df) / 365.25
 
 # ---------------------------
-# Declustering (core)
+# Declustering 
 # ---------------------------
 
 def _time_to_float_years(series: pd.Series) -> np.ndarray:
@@ -107,7 +107,7 @@ def clust(df: pd.DataFrame,
     return df_clusters, None
 
 # ---------------------------
-# GPD helpers 
+# GPD 
 # ---------------------------
 
 def fit_gpd_mle(z: np.ndarray) -> Tuple[float, float]:
