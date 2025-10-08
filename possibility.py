@@ -7,7 +7,7 @@ from predict import outer_and_necessity, outer_and_necessity_per_year
 # User/config inputs
 # ------------------------------
 DATA_CSV  = "ardieres.csv"
-u         = 12.0          # POT threshold (same units as 'obs')
+u         = 15.0          # POT threshold (same units as 'obs')
 time_cond = 7/365.0       # declustering gap in years (≈ one week)
 xi_grid   = np.linspace(-0.30, 0.60, 121)   # GPD ξ grid
 sig_grid  = np.linspace(  5.00, 40.00, 141) # GPD σ grid

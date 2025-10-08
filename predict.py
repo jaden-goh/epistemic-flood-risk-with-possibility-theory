@@ -1,6 +1,3 @@
-
-# possibilistic prediction with GPD (and optional Poisson rate).
-
 import numpy as np
 import scipy.stats as st
 
